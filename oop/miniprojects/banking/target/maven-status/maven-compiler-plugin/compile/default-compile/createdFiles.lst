@@ -1,0 +1,3 @@
+com/example/banking/banking/infrastructure/persistence/BankAccountRepositoryAdapter.class
+com/example/banking/banking/infrastructure/persistence/SpringDataBankAccountRepository.class
+com/example/banking/identity/infrastructure/persistence/JpaUserRepository.class

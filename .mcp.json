@@ -1,0 +1,22 @@
+{
+    "mcpServers": {
+        "mineru": {
+            "command": "uvx",
+            "args": [
+                "mineru-open-mcp"
+            ],
+            "env": {
+                "MINERU_API_TOKEN": "eyJ0eXBlIjoiSldUIiwiYWxnIjoiSFM1MTIifQ.eyJqdGkiOiIzNDQwMDExMSIsInJvbCI6IlJPTEVfUkVHSVNURVIiLCJpc3MiOiJPcGVuWExhYiIsImlhdCI6MTc3OTU0NDc4MywiY2xpZW50SWQiOiJsa3pkeDU3bnZ5MjJqa3BxOXgydyIsInBob25lIjoiIiwib3BlbklkIjpudWxsLCJ1dWlkIjoiNjc0NTU0MDMtODkyNi00NjUzLWJlM2ItNzNlY2FlNDMxMDgwIiwiZW1haWwiOiIiLCJleHAiOjE3ODczMjA3ODN9.vEKnD6KNkjd5n7i5qyqicqMvTIp-ihJFT2zcgsZXpsDG0Hi5PbKh8ViWdvMHom8Pwf6kx4vkRVO45QUZJqvn0Q"
+            }
+        },
+        "astah-pro-mcp": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "mcp-remote@latest",
+                "http://127.0.0.1:8888/mcp",
+                "--allow-http"
+            ]
+        }
+    }
+}
