@@ -1,27 +1,36 @@
 package com.example.banking.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-
-import java.util.Map;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final ObjectMapper objectMapper;
-
-    public SecurityConfig(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                // static frontend
+                .requestMatchers("/", "/index.html", "/*.js", "/*.css",
+                        "/components/**", "/tweaks-panel.jsx", "/data.jsx",
+                        "/app.jsx", "/i18n.js").permitAll()
+                // auth endpoints are always open
+                .requestMatchers("/auth/login", "/auth/register").permitAll()
+                .anyRequest().authenticated()
+            )
+            .sessionManagement(sm -> sm
+                .maximumSessions(10)
+            );
+        return http.build();
     }
 
     @Bean
@@ -30,36 +39,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/register", "/auth/login").permitAll()
-                .requestMatchers("/", "/index.html", "/*.js", "/*.jsx", "/*.css",
-                        "/components/**", "/fonts/**", "/favicon.ico").permitAll()
-                .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
-                        "/v3/api-docs/**", "/v3/api-docs").permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    objectMapper.writeValue(response.getWriter(),
-                            Map.of("error", "Unauthorized: " + authException.getMessage()));
-                })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    objectMapper.writeValue(response.getWriter(), Map.of("error", "Access denied"));
-                })
-            )
-            .sessionManagement(session -> session
-                .maximumSessions(5)
-            );
-
-        return http.build();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 }

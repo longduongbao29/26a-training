@@ -1,6 +1,5 @@
 import argparse
 from collections import defaultdict
-from functools import lru_cache
 
 
 class Node:
@@ -11,19 +10,32 @@ class Node:
     def __repr__(self):
         return f"Node({self.account_id})"
 
+    def __hash__(self):
+        return hash(self.account_id)
+
+    def __eq__(self, other):
+        return isinstance(other, Node) and self.account_id == other.account_id
+
 
 class Graph:
     def __init__(self):
         self._nodes: dict[str, Node] = {}
-        self._adj: dict[str, list[str]] = defaultdict(list)
+        self._adj: dict[Node, list[Node]] = defaultdict(list)
+        self.total_money = 0
+        self.total_transactions = 0
+
+    def _get_or_create(self, account_id: str) -> Node:
+        if account_id not in self._nodes:
+            self._nodes[account_id] = Node(account_id)
+        return self._nodes[account_id]
 
     def add_transaction(self, from_id: str, to_id: str, amount: int):
-        if from_id not in self._nodes:
-            self._nodes[from_id] = Node(from_id)
-        if to_id not in self._nodes:
-            self._nodes[to_id] = Node(to_id)
-        self._nodes[from_id].money_sent += amount
-        self._adj[from_id].append(to_id)
+        from_node = self._get_or_create(from_id)
+        to_node   = self._get_or_create(to_id)
+        from_node.money_sent += amount
+        self._adj[from_node].append(to_node)
+        self.total_money += amount
+        self.total_transactions += 1
 
     def accounts_sorted(self) -> list[str]:
         return sorted(self._nodes)
@@ -33,18 +45,26 @@ class Graph:
         return node.money_sent if node else 0
 
     def has_cycle(self, start: str, k: int) -> bool:
-        frozen_adj = {node: tuple(neighbors) for node, neighbors in self._adj.items()}
-
-        @lru_cache(maxsize=None)
-        def dfs(node: str, steps: int) -> bool:
-            if steps == 0:
-                return node == start
-            for nxt in frozen_adj.get(node, ()):
-                if dfs(nxt, steps - 1):
-                    return True
+        start_node = self._nodes.get(start)
+        if not start_node:
             return False
 
-        return dfs(start, k)
+        frozen_adj = {node: tuple(neighbors) for node, neighbors in self._adj.items()}
+        memo: dict[tuple[Node, int], bool] = {}
+
+        def dfs(node: Node, steps: int) -> bool:
+            if steps == 0:
+                return node == start_node
+            if (node, steps) in memo:
+                return memo[(node, steps)]
+            for nxt in frozen_adj.get(node, ()):
+                if dfs(nxt, steps - 1):
+                    memo[(node, steps)] = True
+                    return True
+            memo[(node, steps)] = False
+            return False
+
+        return dfs(start_node, k)
 
 
 def main():
@@ -57,8 +77,6 @@ def main():
         lines = iter(f.read().splitlines())
 
     g = Graph()
-    total_count = 0
-    total_money = 0
 
     for line in lines:
         line = line.strip()
@@ -67,8 +85,6 @@ def main():
         if not line:
             continue
         from_acc, to_acc, money, _time, _atm = line.split()
-        total_count += 1
-        total_money += int(money)
         g.add_transaction(from_acc, to_acc, int(money))
 
     out = []
@@ -80,9 +96,9 @@ def main():
             continue
 
         if line == "?number_transactions":
-            out.append(str(total_count))
+            out.append(str(g.total_transactions))
         elif line == "?total_money_transaction":
-            out.append(str(total_money))
+            out.append(str(g.total_money))
         elif line == "?list_sorted_accounts":
             out.append(" ".join(g.accounts_sorted()))
         elif line.startswith("?total_money_transaction_from "):
