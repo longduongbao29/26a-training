@@ -17,13 +17,15 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Handles authentication: register, login, me, logout, sessions.
- * Dependency: AuthController → CustomerService, CustomerRepository, LoginSessionRepository
+ * Dependency: AuthController → CustomerService, CustomerRepository,
+ * LoginSessionRepository
  */
 @RestController
 @RequestMapping("/auth")
@@ -35,9 +37,9 @@ public class AuthController {
     private final AuthenticationManager authManager;
 
     public AuthController(CustomerService customerService,
-                          CustomerRepository customerRepo,
-                          LoginSessionRepository sessionRepo,
-                          AuthenticationManager authManager) {
+            CustomerRepository customerRepo,
+            LoginSessionRepository sessionRepo,
+            AuthenticationManager authManager) {
         this.customerService = customerService;
         this.customerRepo = customerRepo;
         this.sessionRepo = sessionRepo;
@@ -57,7 +59,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body,
-                                   HttpServletRequest request) {
+            HttpServletRequest request) {
         try {
             Authentication auth = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(body.get("email"), body.get("password")));
@@ -103,7 +105,11 @@ public class AuthController {
                 List<LoginSession> active = sessionRepo
                         .findByCustomerIdOrderByLoginTimeDesc((long) c.getId());
                 active.stream().filter(LoginSession::isActive).findFirst()
-                        .ifPresent(ls -> { ls.setActive(false); sessionRepo.save(ls); });
+                        .ifPresent(ls -> {
+                            ls.setActive(false);
+                            ls.setLoggedOutAt(LocalDateTime.now());
+                            sessionRepo.save(ls);
+                        });
             });
         }
         session.invalidate();
@@ -113,18 +119,28 @@ public class AuthController {
 
     @GetMapping("/sessions")
     public ResponseEntity<?> sessions(Authentication auth) {
-        if (auth == null) return ResponseEntity.status(401).build();
+        if (auth == null)
+            return ResponseEntity.status(401).build();
         return customerRepo.findByEmail(auth.getName())
                 .map(c -> {
-                    List<Map<String, Object>> list = sessionRepo
-                            .findByCustomerIdOrderByLoginTimeDesc((long) c.getId())
-                            .stream()
+                    List<LoginSession> sessions = sessionRepo
+                            .findByCustomerIdOrderByLoginTimeDesc((long) c.getId());
+                    Long currentId = sessions.stream()
+                            .filter(LoginSession::isActive)
+                            .max(Comparator.comparing(LoginSession::getLoginTime,
+                                    Comparator.nullsLast(Comparator.naturalOrder())))
+                            .map(LoginSession::getId)
+                            .orElse(null);
+
+                    List<Map<String, Object>> list = sessions.stream()
                             .map(s -> Map.<String, Object>of(
                                     "id", s.getId(),
                                     "userAgent", s.getUserAgent() != null ? s.getUserAgent() : "",
                                     "ipAddress", s.getIpAddress() != null ? s.getIpAddress() : "",
-                                    "loginTime", s.getLoginTime() != null ? s.getLoginTime().toString() : "",
-                                    "active", s.isActive()))
+                                    "loggedInAt", s.getLoginTime() != null ? s.getLoginTime().toString() : "",
+                                    "loggedOutAt", s.getLoggedOutAt() != null ? s.getLoggedOutAt().toString() : "",
+                                    "active", s.isActive(),
+                                    "current", s.getId() != null && s.getId().equals(currentId)))
                             .collect(Collectors.toList());
                     return ResponseEntity.ok(list);
                 })

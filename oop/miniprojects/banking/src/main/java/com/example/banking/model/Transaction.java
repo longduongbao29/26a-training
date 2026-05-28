@@ -3,11 +3,7 @@ package com.example.banking.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * Records a single financial event on an account.
- * Relationship: Transaction is part of Account COMPOSITION
- *               (ManyToOne back to Account).
- */
+
 @Entity
 @Table(name = "transactions")
 public class Transaction {
@@ -16,7 +12,6 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** DEPOSIT | WITHDRAW | TRANSFER_IN | TRANSFER_OUT */
     private String type;
     private float amount;
     private LocalDateTime occurredAt;
@@ -28,7 +23,6 @@ public class Transaction {
 
     public Transaction() {}
 
-    // ── getters / setters ──────────────────────────────────────────────────────
 
     public Long getId() { return id; }
 

@@ -16,24 +16,61 @@ public class LoginSession {
     private String userAgent;
     private String ipAddress;
     private LocalDateTime loginTime;
-    private boolean active = true;
+    private LocalDateTime loggedOutAt;
+    private Boolean active = true;
 
-    public LoginSession() {}
+    public LoginSession() {
+    }
 
-    public Long getId() { return id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Long getCustomerId() { return customerId; }
-    public void setCustomerId(Long customerId) { this.customerId = customerId; }
+    public Long getCustomerId() {
+        return customerId;
+    }
 
-    public String getUserAgent() { return userAgent; }
-    public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
+    }
 
-    public String getIpAddress() { return ipAddress; }
-    public void setIpAddress(String ipAddress) { this.ipAddress = ipAddress; }
+    public String getUserAgent() {
+        return userAgent;
+    }
 
-    public LocalDateTime getLoginTime() { return loginTime; }
-    public void setLoginTime(LocalDateTime loginTime) { this.loginTime = loginTime; }
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
 
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public LocalDateTime getLoginTime() {
+        return loginTime;
+    }
+
+    public void setLoginTime(LocalDateTime loginTime) {
+        this.loginTime = loginTime;
+    }
+
+    public LocalDateTime getLoggedOutAt() {
+        return loggedOutAt;
+    }
+
+    public void setLoggedOutAt(LocalDateTime loggedOutAt) {
+        this.loggedOutAt = loggedOutAt;
+    }
+
+    public boolean isActive() {
+        return Boolean.TRUE.equals(active);
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 }

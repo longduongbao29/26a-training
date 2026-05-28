@@ -7,8 +7,8 @@ import java.util.List;
 /**
  * Abstract base class for all account types.
  * Relationship: Account is the PARENT class (generalization) of
- *               CurrentAccount and SavingAccount.
- *               Account COMPOSES Transaction (1 Account → 0..* Transactions).
+ * CurrentAccount and SavingAccount.
+ * Account COMPOSES Transaction (1 Account → 0..* Transactions).
  */
 @Entity
 @Table(name = "accounts")
@@ -20,22 +20,28 @@ public abstract class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String number;      // e.g. VN-1234-5678
+    private String number; // e.g. VN-1234-5678
     private float balance;
     private String description;
     private String balanceCurrency = "VND";
 
-    // Part of COMPOSITION with Customer
+    // Association with Customer (independent lifecycles)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
+
+    // Association with Bank (independent lifecycles)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id")
+    private Bank bank;
 
     // COMPOSITION: transactions belong entirely to this account
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("occurredAt DESC")
     private List<Transaction> transactions = new ArrayList<>();
 
-    public Account() {}
+    public Account() {
+    }
 
     // ── abstract contract ──────────────────────────────────────────────────────
 
@@ -47,22 +53,59 @@ public abstract class Account {
 
     // ── getters / setters ──────────────────────────────────────────────────────
 
-    public Long getId() { return id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getNumber() { return number; }
-    public void setNumber(String number) { this.number = number; }
+    public String getNumber() {
+        return number;
+    }
 
-    public float getBalance() { return balance; }
-    public void setBalance(float balance) { this.balance = balance; }
+    public void setNumber(String number) {
+        this.number = number;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public float getBalance() {
+        return balance;
+    }
 
-    public String getBalanceCurrency() { return balanceCurrency; }
-    public void setBalanceCurrency(String balanceCurrency) { this.balanceCurrency = balanceCurrency; }
+    public void setBalance(float balance) {
+        this.balance = balance;
+    }
 
-    public Customer getCustomer() { return customer; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
+    public String getDescription() {
+        return description;
+    }
 
-    public List<Transaction> getTransactions() { return transactions; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getBalanceCurrency() {
+        return balanceCurrency;
+    }
+
+    public void setBalanceCurrency(String balanceCurrency) {
+        this.balanceCurrency = balanceCurrency;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public Bank getBank() {
+        return bank;
+    }
+
+    public void setBank(Bank bank) {
+        this.bank = bank;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
 }

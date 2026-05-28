@@ -19,7 +19,7 @@ import java.util.Map;
  * domain object delegated to for all balance mutations.
  *
  * Relationship: TransferController DEPENDS ON Bank (calls withdraw/deposit)
- *               TransferController DEPENDS ON AccountRepository, TransactionRepository
+ * TransferController DEPENDS ON AccountRepository, TransactionRepository
  */
 @RestController
 @RequestMapping("/transfers")
@@ -27,20 +27,18 @@ public class TransferController {
 
     private final AccountRepository accountRepo;
     private final TransactionRepository txRepo;
-    private final Bank bank;
 
     public TransferController(AccountRepository accountRepo,
-                              TransactionRepository txRepo,
-                              Bank bank) {
+            TransactionRepository txRepo) {
         this.accountRepo = accountRepo;
         this.txRepo = txRepo;
-        this.bank = bank;
     }
 
     @PostMapping
     @Transactional
     public ResponseEntity<?> transfer(@RequestBody Map<String, Object> body, Authentication auth) {
-        if (auth == null) return ResponseEntity.status(401).build();
+        if (auth == null)
+            return ResponseEntity.status(401).build();
 
         long fromId = Long.parseLong(body.get("fromAccountId").toString());
         long toId = Long.parseLong(body.get("toAccountId").toString());
@@ -60,6 +58,7 @@ public class TransferController {
         }
 
         try {
+            Bank bank = resolveBank(from, to);
             bank.withdraw(from, amount);
             bank.deposit(to, amount);
         } catch (IllegalStateException e) {
@@ -84,5 +83,13 @@ public class TransferController {
         tx.setDescription(desc);
         tx.setOccurredAt(time);
         txRepo.save(tx);
+    }
+
+    private Bank resolveBank(Account from, Account to) {
+        if (from.getBank() != null)
+            return from.getBank();
+        if (to.getBank() != null)
+            return to.getBank();
+        return new Bank();
     }
 }

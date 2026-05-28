@@ -4,6 +4,7 @@ import com.example.banking.model.CurrentAccount;
 import com.example.banking.model.Customer;
 import com.example.banking.model.SavingAccount;
 import com.example.banking.repository.AccountRepository;
+import com.example.banking.repository.BankRepository;
 import com.example.banking.repository.CustomerRepository;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,13 +22,16 @@ public class CustomerService implements UserDetailsService {
 
     private final CustomerRepository customerRepo;
     private final AccountRepository accountRepo;
+    private final BankRepository bankRepo;
     private final PasswordEncoder passwordEncoder;
 
     public CustomerService(CustomerRepository customerRepo,
-                           AccountRepository accountRepo,
-                           PasswordEncoder passwordEncoder) {
+            AccountRepository accountRepo,
+            BankRepository bankRepo,
+            PasswordEncoder passwordEncoder) {
         this.customerRepo = customerRepo;
         this.accountRepo = accountRepo;
+        this.bankRepo = bankRepo;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -56,6 +60,11 @@ public class CustomerService implements UserDetailsService {
         customer = customerRepo.save(customer);
 
         // Auto-create a CurrentAccount and a SavingAccount for every new customer
+        var bank = bankRepo.findTopByOrderByIdAsc().orElseGet(() -> {
+            var b = new com.example.banking.model.Bank();
+            return bankRepo.save(b);
+        });
+
         CurrentAccount current = new CurrentAccount();
         current.setAccountTitle("Tài khoản thanh toán");
         current.setStatus("ACTIVE");
@@ -63,6 +72,7 @@ public class CustomerService implements UserDetailsService {
         current.setBalance(1_000_000f);
         current.setDescription("Tài khoản thanh toán mặc định");
         current.setCustomer(customer);
+        current.setBank(bank);
         accountRepo.save(current);
 
         SavingAccount saving = new SavingAccount();
@@ -73,6 +83,7 @@ public class CustomerService implements UserDetailsService {
         saving.setDescription("Tài khoản tiết kiệm");
         saving.setInterest(5.0f);
         saving.setCustomer(customer);
+        saving.setBank(bank);
         accountRepo.save(saving);
 
         customer.setCardNo(current.getNumber());
